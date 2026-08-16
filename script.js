@@ -7,30 +7,65 @@ const questions = document.getElementById("questions");
 const loading = document.getElementById("loading");
 
 
-generateBtn.addEventListener("click", function() {
-  const selectedRole = role.value;
+generateBtn.addEventListener("click", async function() {
+  generateBtn.disabled = true;
+  generateBtn.innerText = "Generating...";  
+  
+    const selectedRole = role.value;
     const selectedDifficulty = difficulty.value;
     const questionCount = Number(number.value);
 
-    console.log(selectedRole);
-    console.log(selectedDifficulty);
-    console.log(questionCount);
-
     questions.innerHTML = "";
+    loading.innerHTML = "Generating questions...";
 
-    for (let i = 1; i <= questionCount; i++) {
-        const question = document.createElement("div");
+    try { 
+        const response = await fetch("/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-        question.className = "question-card";
+            body: JSON.stringify({
+                role: selectedRole,
+                difficulty: selectedDifficulty,
+                number: questionCount
+            })
 
-        question.innerHTML = `
-            <h3>Question ${i}</h3>
-            <p>
-            This is a ${selectedDifficulty} question for a ${selectedRole}.
+        });
 
-            </p>
-           ` ;
-        questions.appendChild(question);
+        const data = await response.json();
+
+        console.log(data);
+
+        loading.innerHTML = "";
+
+        const aiQuestions = JSON.parse(data.questions);
+
+        aiQuestions.forEach((item, index) => {
+            const question = document.createElement("div");
+
+            question.className = "question-card";
+
+            question.innerHTML = `
+                <h3>Question ${index + 1}</h3>
+                <p>
+                ${item.question}
+                </p>
+                <details>
+                    <summary>Show Answer</summary>
+                    <p>${item.answer}</p>
+                </details>
+            `;
+            questions.appendChild(question);
+        });
+        generateBtn.disabled = false;
+        generateBtn.innerText = "Generate Questions";
+
+    } catch (error) {
+        generateBtn.disabled = false;
+        generateBtn.innerText = "Generate Questions";
+        console.error(error);
+            loading.innerHTML = "Something went wrong. Check the Server.";
 
     }
 
